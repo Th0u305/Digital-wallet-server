@@ -1,5 +1,5 @@
 import { model, Schema } from "mongoose";
-import { IAuthProvider, IsActive, Role, WalletStatus } from "../user/user.interface";
+import { IAuthProvider, IsActive, Role } from "../user/user.interface";
 import { AgentProfile, IAgent } from "./agent.interface";
 
 const authProviderSchema = new Schema<IAuthProvider>({
@@ -48,11 +48,7 @@ const agentSchema = new Schema<IAgent>({
         default : IsActive.ACTIVE
     },
     isVerified : { type : Boolean, default : true},
-    walletStatus : {
-        type : String,
-        enum : Object.values(WalletStatus),
-        default : WalletStatus.ACTIVE
-    },
+    walletId : { type : Schema.Types.ObjectId , ref : "wallet"},
     agentInfo : agentInfo    
 },{
     versionKey : false,

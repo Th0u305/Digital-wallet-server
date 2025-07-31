@@ -18,12 +18,6 @@ export enum IsActive {
     BLOCKED = "BLOCKED"
 }
 
-export enum WalletStatus {
-  ACTIVE = 'ACTIVE',
-  BLOCKED = 'BLOCKED',
-  SUSPENDED = 'SUSPENDED',
-}
-
 export interface IUser {
     _id?: Types.ObjectId
     name : string;
@@ -35,7 +29,7 @@ export interface IUser {
     isDeleted?: boolean;
     isActive?: IsActive;
     isVerified?: boolean;
-    walletStatus? : WalletStatus
     auths : IAuthProvider
+    walletId? : Types.ObjectId
     role : Role
 }

@@ -22,7 +22,7 @@ const getAllAgent = catchAsync(async (req: Request , res: Response)=>{
 
 // create user
 const createAgent = catchAsync(async(req:Request, res:Response)=>{
-    const result = await AgentServices.createAgent(req.body)
+    const result = await AgentServices.createAgentWithWallet(req.body)
     
     sendResponse(res,{
         success : true,

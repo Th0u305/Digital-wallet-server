@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { IAuthProvider, IsActive, Role, WalletStatus } from "../user/user.interface";
+import { IAuthProvider, IsActive, Role } from "../user/user.interface";
 
 export interface AgentProfile{
     nidNumber : string
@@ -18,8 +18,8 @@ export interface IAgent {
     isDeleted?: boolean;
     isActive?: IsActive;
     isVerified?: boolean;
-    walletStatus? : WalletStatus
     auths : IAuthProvider
+    walletId? : Types.ObjectId
     role : Role
     agentInfo : AgentProfile
 }

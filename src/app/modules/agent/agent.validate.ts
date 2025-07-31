@@ -38,16 +38,8 @@ export const createAgentSchema = z.object({
         .string({ invalid_type_error: "picture must be url" })
         .max(200, { message: "url cannot exceed 200 characters." })
         .optional(),
-    // agentInfo : z.array(z.object({
-    //     nidNumber: z.string().min(10, "A valid NID number is required"),
-    //     commissionRate: z.number().positive().optional(),
-    //     tradeLicenseNumber: z.string().optional(),
-    // })),
-        //  nidNumber: z.string().min(10, "A valid NID number is required"),
-        // commissionRate: z.number().positive().optional(),
-        // tradeLicenseNumber: z.string().optional(),
     agentInfo : z.object({
-               nidNumber: z.string().min(10, "A valid NID number is required"),
+        nidNumber: z.string().min(10, "A valid NID number is required"),
         commissionRate: z.number().positive().optional(),
         tradeLicenseNumber: z.string().optional(),
     })

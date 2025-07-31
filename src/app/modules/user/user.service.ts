@@ -5,6 +5,7 @@ import { IAuthProvider, IUser, Role } from "./user.interface"
 import { User } from "./user.model"
 import httpStatus from "http-status-codes"
 import { Response } from "express"
+import { Wallet } from "../wallet/wallet.model"
 
 
 // get all user
@@ -20,23 +21,69 @@ const getAllUsers = async () =>{
 }
 
 // create user
-const createUser = async (payload: Partial<IUser>) =>{
-    const { email, password, ...rest} = payload
-    const isUserExist = await User.findOne({email})
-
-    if (isUserExist) {
-        throw new AppError(httpStatus.BAD_REQUEST, "User already exists")
-    }
-    const hashedPassword = await Encrypt.hashPassword(password as string)    
-    const authProvider: IAuthProvider = { provider: "credentials", providerId : email as string}
+const createUserWithWallet = async (payload: Partial<IUser>) =>{
     
-    const user = await User.create({
-        email,
-        password: hashedPassword,
-        auths : authProvider,
-        ...rest
-    })
-    return user
+    const { email, password, ...rest} = payload
+
+    const isUserExist = await User.findOne({ email });
+
+    if (isUserExist) {            
+        throw new AppError(httpStatus.BAD_REQUEST, "User with this email already exists.");
+    }
+    
+    // start user session
+    const session = await User.startSession();
+
+    try {
+
+        // Start the transaction
+        session.startTransaction();
+   
+        const hashedPassword = await Encrypt.hashPassword(password as string);
+        const authProvider: IAuthProvider = { provider: "credentials", providerId: email as string };
+
+        // Create the user 
+        const newUser = new User({
+            email,
+            password: hashedPassword,
+            auths: authProvider,
+            ...rest
+        });
+
+        // Saving the user to the database within the session
+        const createdUser = await newUser.save({ session });
+
+
+        // Create the wallet, linking it to the new user
+        const newWallet = await Wallet.create([{
+            userId: createdUser._id, // userId
+            userModel : "user"
+        }], { session });
+
+
+        //  Update the user with the new wallet's ID 
+        createdUser.walletId = newWallet[0]._id; // wallet Id
+        await createdUser.save({ session });
+
+        // commit the transaction
+        await session.commitTransaction();
+        
+        return createdUser;
+        
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    }catch (error) {
+
+        // If any error occurs, abort the entire transaction
+        await session.abortTransaction();
+        
+        throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to create user and wallet.');
+
+    }finally{
+
+        // Finally, always end the session
+        session.endSession();
+    }
+    
 }
 
 // update user
@@ -93,6 +140,6 @@ const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken:
 
 export const UserServices = {
     getAllUsers,
-    createUser,
+    createUserWithWallet,
     updateUser
 }

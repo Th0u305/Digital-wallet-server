@@ -1,6 +1,7 @@
 import { envVars } from "../config/env"
-import { IAuthProvider, IUser, Role, WalletStatus } from "../modules/user/user.interface";
+import { IAuthProvider, IUser, Role } from "../modules/user/user.interface";
 import { User } from "../modules/user/user.model"
+import { UserServices } from "../modules/user/user.service";
 import { Encrypt } from "./encrypt";
 
 export const seedSuperAdmin = async () =>{
@@ -21,11 +22,12 @@ export const seedSuperAdmin = async () =>{
             email : envVars.SUPER_ADMIN_EMAIL,
             password : hashedPassword,
             isVerified : true,
-            walletStatus : WalletStatus.ACTIVE,
             auths : authProvider
         }
 
-        await User.create(payload)
+        UserServices.createUserWithWallet(payload)
+
+        // await User.create(payload)
 
     } catch (error) {
         // eslint-disable-next-line no-console

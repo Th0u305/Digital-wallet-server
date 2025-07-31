@@ -1,5 +1,5 @@
 import { model, Schema } from "mongoose";
-import { IAuthProvider, IsActive, IUser, Role, WalletStatus } from "./user.interface";
+import { IAuthProvider, IsActive, IUser, Role } from "./user.interface";
 
 const authProviderSchema = new Schema<IAuthProvider>({
     provider : { type : String, required: true },
@@ -36,12 +36,8 @@ const userSchema = new Schema<IUser>({
         enum : Object.values(IsActive),
         default : IsActive.ACTIVE
     },
+    walletId : { type : Schema.Types.ObjectId , ref : "wallet"},
     isVerified : { type : Boolean, default : false},
-    walletStatus : {
-        type : String,
-        enum : Object.values(WalletStatus),
-        default : WalletStatus.ACTIVE
-    }
 },{
     versionKey : false,
     timestamps : true

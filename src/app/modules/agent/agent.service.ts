@@ -6,6 +6,7 @@ import { Response } from "express"
 import { Agent } from "./agent.model"
 import { AgentProfile, IAgent } from "./agent.interface"
 import { IAuthProvider, Role } from "../user/user.interface"
+import { Wallet } from "../wallet/wallet.model"
 
 
 // get all user
@@ -21,7 +22,7 @@ const getAllAgent = async () =>{
 }
 
 // create user
-const createAgent = async (payload: Partial<IAgent>) =>{
+const createAgentWithWallet = async (payload: Partial<IAgent>) =>{
     const { email, password, agentInfo, ...rest} = payload
     const isUserExist = await Agent.findOne({email})
 
@@ -33,17 +34,56 @@ const createAgent = async (payload: Partial<IAgent>) =>{
         throw new AppError(httpStatus.BAD_REQUEST, "NID number is required")
     }
 
-    const hashedPassword = await Encrypt.hashPassword(password as string)    
-    const authProvider: IAuthProvider = { provider: "credentials", providerId : email as string}
-    const agentDetails : AgentProfile = { nidNumber :  agentInfo?.nidNumber as string, commissionRate : agentInfo?.commissionRate as number , tradeLicenseNumber : agentInfo?.tradeLicenseNumber as string}
-    const user = await Agent.create({
-        email,
-        password: hashedPassword,
-        auths : authProvider,
-        agentInfo : agentDetails,
-        ...rest
-    })
-    return user
+    // start agent model session
+    const session = await Agent.startSession()
+
+    try {
+
+        // Start the transaction
+        session.startTransaction()
+
+        const hashedPassword = await Encrypt.hashPassword(password as string)    
+        const authProvider: IAuthProvider = { provider: "credentials", providerId : email as string}
+        const agentDetails : AgentProfile = { nidNumber :  agentInfo?.nidNumber as string, commissionRate : agentInfo?.commissionRate as number , tradeLicenseNumber : agentInfo?.tradeLicenseNumber as string}
+        
+        // create new agent
+        const agent = new Agent({
+            email,
+            password: hashedPassword,
+            auths : authProvider,
+            agentInfo : agentDetails,
+            ...rest
+        })
+
+        // Saving the agent to the database within the session
+        const createdAgent = await agent.save({session})
+
+        // Create the wallet, linking it to the new agent
+        const newWallet = await Wallet.create([{
+            userId : createdAgent?._id,
+            userModel : "agent"
+        }], {session})
+
+        //  Update the user with the new wallet's ID 
+        createdAgent.walletId = newWallet[0]._id 
+        await createdAgent.save({session})
+
+        // commit the transaction
+        await session.commitTransaction()
+
+        return createdAgent
+        
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+
+        // If any error occurs, abort the entire transaction
+        await session.abortTransaction();
+        throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to create user and wallet.');
+
+    }finally{
+      // Finally, always end the session
+        session.endSession();
+    }
 }
 
 // update user
@@ -100,6 +140,6 @@ const updateAgent = async (userId: string, payload: Partial<IAgent>, decodedToke
 
 export const AgentServices = {
     getAllAgent,
-    createAgent,
+    createAgentWithWallet,
     updateAgent
 }
