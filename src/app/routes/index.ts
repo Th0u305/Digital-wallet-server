@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { UserRoutes } from "../modules/user/user.routes";
-import AuthRoute from "../modules/auth/auth.routes";
+import { AuthRoutes } from "../modules/auth/auth.routes";
 import { AgentRoutes } from "../modules/agent/agent.routes";
+import { WalletRoutes } from "../modules/wallet/wallet.routes";
 
 export const customRouter = Router();
 const moduleRoutes = [
@@ -11,12 +12,16 @@ const moduleRoutes = [
   },
   {
     path: "/auth",
-    route : AuthRoute
+    route : AuthRoutes
   },
   {
     path : "/agent",
     route : AgentRoutes
   },
+  {
+    path : "/wallet",
+    route : WalletRoutes
+  }
 ];
 
 moduleRoutes.forEach((route) => {

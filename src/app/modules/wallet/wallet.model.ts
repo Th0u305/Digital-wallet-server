@@ -18,7 +18,7 @@ const walletSchema = new Schema<IWallet>(
       //  two model names
       enum: ["user", "agent"],
     },
-    balance: { type: Number, required: true, min: 0, default: 50 },
+    balance: { type: Number, min: 0, default: 50 },
     walletStatus: {
       type: String,
       enum: Object.values(WalletStatus),

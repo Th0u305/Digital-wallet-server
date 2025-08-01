@@ -8,7 +8,7 @@ export enum WalletStatus {
 
 export interface IWallet extends Document {
   userId: Types.ObjectId; // Reference to the User
-  balance: number;
+  balance?: number;
   userModel : string
-  walletStatus: WalletStatus;
+  walletStatus?: WalletStatus;
 }

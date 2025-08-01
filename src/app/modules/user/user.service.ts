@@ -6,6 +6,7 @@ import { User } from "./user.model"
 import httpStatus from "http-status-codes"
 import { Response } from "express"
 import { Wallet } from "../wallet/wallet.model"
+import mongoose from "mongoose"
 
 
 // get all user
@@ -32,7 +33,7 @@ const createUserWithWallet = async (payload: Partial<IUser>) =>{
     }
     
     // start user session
-    const session = await User.startSession();
+    const session = await mongoose.startSession();
 
     try {
 
@@ -74,7 +75,7 @@ const createUserWithWallet = async (payload: Partial<IUser>) =>{
     }catch (error) {
 
         // If any error occurs, abort the entire transaction
-        await session.abortTransaction();
+        await session.abortTransaction();        
         
         throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to create user and wallet.');
 

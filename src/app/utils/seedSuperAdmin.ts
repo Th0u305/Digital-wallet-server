@@ -25,7 +25,7 @@ export const seedSuperAdmin = async () =>{
             auths : authProvider
         }
 
-        UserServices.createUserWithWallet(payload)
+        await UserServices.createUserWithWallet(payload)
 
         // await User.create(payload)
 
