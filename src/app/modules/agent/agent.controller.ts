@@ -52,5 +52,5 @@ const updateAgent = catchAsync( async(req:Request, res:Response)=>{
 export const AgentController = {
     getAllAgent,
     createAgent,
-    updateAgent
+    updateAgent,
 }

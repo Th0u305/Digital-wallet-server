@@ -21,12 +21,13 @@ const addMoney = catchAsync( async(req:Request, res:Response)=>{
 })
 
 // send money user to user
-const sendMoneyUserToUser = catchAsync( async (req: Request, res:Response)=>{
-    const receiverId = req.params.id
-    const payload = req.body
-    const decodedToken = req.user
+const sendMoney = catchAsync( async (req: Request, res:Response)=>{
 
-    const result = await WalletService.sendMoneyUserToUser(receiverId, payload, decodedToken as JwtPayload)
+    const paramsId = req.params.id
+    const decodedToken = req.user
+    const { amount , transactionType } = req.body
+
+    const result = await WalletService.sendMoney(paramsId, amount, transactionType , decodedToken as JwtPayload)
 
     sendResponse(res,{
         success : true,
@@ -35,7 +36,6 @@ const sendMoneyUserToUser = catchAsync( async (req: Request, res:Response)=>{
         data : result
     })
 })
-
 
 // view transaction history
 const transactionHistory = catchAsync( async( req:Request, res:Response)=>{
@@ -54,6 +54,6 @@ const transactionHistory = catchAsync( async( req:Request, res:Response)=>{
 
 export const WalletController = {
     addMoney,
-    sendMoneyUserToUser,
+    sendMoney,
     transactionHistory
 }

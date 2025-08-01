@@ -8,5 +8,5 @@ import { WalletController } from "./wallet.controller";
 export const WalletRoutes = Router()
 
 WalletRoutes.get("/transactionHistory", checkAuth(...Object.values(Role)), WalletController.transactionHistory)
-WalletRoutes.post("/money", checkAuth(...Object.values(Role)), validateRequest(transactionZodValidation), WalletController.addMoney)
-WalletRoutes.post("/user-to-user/:id", checkAuth("USER", "ADMIN", "SUPER_ADMIN"), validateRequest(sendMoneyUserToUser), WalletController.sendMoneyUserToUser)
+WalletRoutes.post("/add-money", checkAuth(...Object.values(Role)), validateRequest(transactionZodValidation), WalletController.addMoney)
+WalletRoutes.post("/send-money/:id", checkAuth(...Object.values(Role)), validateRequest(sendMoneyUserToUser), WalletController.sendMoney)

@@ -13,7 +13,7 @@ import httpStatus from "http-status-codes"
 const addMoney = async (payload: Partial<ITransaction>, decodedToken: JwtPayload) =>{
 
     const { amount, transactionType: payloadTrans } = payload
-    const {email, role} = decodedToken
+    const {_id, role} = decodedToken
 
     if (!amount) {
         return { success: false, message: "Amount is missing" }
@@ -22,10 +22,10 @@ const addMoney = async (payload: Partial<ITransaction>, decodedToken: JwtPayload
     let isUserExists 
 
     if (role === Role.AGENT) {
-        isUserExists = await Agent.findOne({email})    
+        isUserExists = await Agent.findById({_id})    
     }
     else{
-        isUserExists = await User.findOne({email})
+        isUserExists = await User.findById({_id})
     }
 
     if (!isUserExists) {
@@ -43,16 +43,9 @@ const addMoney = async (payload: Partial<ITransaction>, decodedToken: JwtPayload
             return { success: false, message: 'Wallet not found or does not belong to the user.' }
         }
 
-        if (payload.transactionType === TransactionType.SEND_MONEY){
+        if (payload.transactionType !== TransactionType.ADD_MONEY){
 
             return { success : false , message : "You cannot perform this action"}
-
-        }else if (payload.transactionType !== TransactionType.ADD_MONEY) {
-
-            if (wallet.balance < amount) {
-                return { success: false, message: 'Insufficient funds for this operation.' }
-            }
-            wallet.balance -= amount;
 
         }else if (payload.transactionType === TransactionType.ADD_MONEY) {
             wallet.balance += amount;
@@ -94,39 +87,59 @@ const addMoney = async (payload: Partial<ITransaction>, decodedToken: JwtPayload
     }    
 }
 
-interface pay {
-    amount : number
-}
-
-const sendMoneyUserToUser = async (paramsId : string , payload: pay, decodedToken : JwtPayload) =>{
-
-    const { amount } = payload
+const sendMoney = async (paramsId : string , amount : number , transType : string , decodedToken : JwtPayload) =>{
 
     if (!paramsId) {
-        throw new AppError(httpStatus.NOT_FOUND, "Receiver id missing")
+        throw new AppError(httpStatus.NOT_FOUND, "Id missing")
     }
     if (!amount) {
         throw new AppError(httpStatus.NOT_FOUND, "Amount is missing")   
     }
+    if (!transType) {
+        throw new AppError(httpStatus.NOT_FOUND, "TransactionType is missing")   
+    }
 
-    const receiverUser = await User.findById(paramsId)
-    const receiverWallet = await Wallet.findById(receiverUser?.walletId)
+    if (decodedToken.role === Role.USER) {
+        if (transType === TransactionType.ADD_MONEY) {
+            throw new AppError(httpStatus.FORBIDDEN, "You cannot perform this action")
+        }
+    }
+
+    let senderUser 
+    let senderWallet
+
+    let receiverUser 
+    let receiverWallet 
+
+    if (decodedToken.role === Role.AGENT) {
+
+        senderUser = await Agent.findById(decodedToken._id)   
+        senderWallet = await Wallet.findById(senderUser?.walletId)
+
+        receiverUser = await Agent.findById(paramsId)
+        receiverWallet = await Wallet.findById(receiverUser?.walletId)
+    }
+    if (decodedToken.role !== Role.AGENT) {
+
+        senderUser = await User.findById(decodedToken._id)
+        senderWallet = await Wallet.findById(senderUser?.walletId)
+
+        receiverUser = await User.findById(paramsId)
+        receiverWallet = await Wallet.findById(receiverUser?.walletId)
+    }
+    
+    if (!senderUser) {
+        throw new AppError (httpStatus.NOT_FOUND, "This user account doesn't exists")
+    }
+    if (!senderWallet) {
+        throw new AppError(httpStatus.NOT_FOUND, 'This user Wallet not found or does not belong to the user.')
+    }
 
     if (!receiverUser) {
         throw new AppError (httpStatus.NOT_FOUND, "Receiver account doesn't exists")
     }
     if (!receiverWallet) {
         throw new AppError(httpStatus.NOT_FOUND, 'Receiver account Wallet not found or does not belong to the user.')
-    }
-
-    const senderUser = await User.findById(decodedToken._id)
-    const senderWallet = await Wallet.findById(senderUser?.walletId)
-
-    if (!senderUser) {
-        throw new AppError (httpStatus.NOT_FOUND, "This account doesn't exists")
-    }
-    if (!senderWallet) {
-        throw new AppError(httpStatus.NOT_FOUND, 'This Wallet not found or does not belong to the user.')
     }
 
     const session = await mongoose.startSession();
@@ -145,13 +158,14 @@ const sendMoneyUserToUser = async (paramsId : string , payload: pay, decodedToke
                 walletId : senderUser.walletId,
                 userModel : senderUser.role.toLowerCase(),
                 amount : amount,
-                status : PAYMENT_STATUS.SEND,
-                transactionType : TransactionType.SEND_MONEY,
+                status : transType === TransactionType.SEND_MONEY ? PAYMENT_STATUS.SEND : PAYMENT_STATUS.COMPLETED,
+                transactionType : transType,
                 sendMoney : {
                     amount : amount,
                     receiverId : paramsId,
                     senderId : senderUser._id,
-                    message :  `Successfully send ${amount} money`
+                    senderRole : senderUser.role,
+                    message :  `An ${senderUser.role.toLocaleLowerCase()} Successfully ${transType.toLocaleLowerCase()} ${amount} money to ${receiverUser.role.toLocaleLowerCase()}`
                 }
             }
         )
@@ -177,17 +191,21 @@ const sendMoneyUserToUser = async (paramsId : string , payload: pay, decodedToke
     }finally{
         session.endSession()
     }
-  
-    
-
-
 }
 
 
 const transactionHistory =  async(decodedToken: JwtPayload)=>{
 
-    const isUserExists = await User.findById(decodedToken._id)
-    const userWallet = await Wallet.findById(isUserExists?.walletId)
+    let isUserExists 
+    let userWallet 
+
+    if (decodedToken.role === Role.AGENT) {
+       isUserExists = await Agent.findById(decodedToken._id)
+       userWallet = await Wallet.findById(isUserExists?.walletId)
+    }
+    
+    isUserExists = await User.findById(decodedToken._id)
+    userWallet = await Wallet.findById(isUserExists?.walletId)
 
     if (!isUserExists) {
         throw new AppError (httpStatus.NOT_FOUND, "This user doesn't exists")
@@ -213,6 +231,6 @@ const transactionHistory =  async(decodedToken: JwtPayload)=>{
 
 export const WalletService = {
     addMoney,
-    sendMoneyUserToUser,
+    sendMoney,
     transactionHistory
 }

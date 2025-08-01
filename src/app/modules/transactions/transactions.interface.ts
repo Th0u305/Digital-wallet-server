@@ -23,6 +23,7 @@ export enum PAYMENT_STATUS {
 export interface SendMoney {
   senderId : Types.ObjectId,
   receiverId : Types.ObjectId,
+  senderRole : string
   amount : number,
   message: string,
 }

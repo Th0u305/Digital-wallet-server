@@ -22,5 +22,7 @@ export const transactionZodValidation = z.object({
 export const sendMoneyUserToUser = z.object({
     amount : z
         .number()
-        .min(10,{ message : 'Minimum transactions amount is 10'})
+        .min(10,{ message : 'Minimum transactions amount is 10'}),
+    transactionType : z
+        .enum(Object.values(TransactionType) as [string]),
 })

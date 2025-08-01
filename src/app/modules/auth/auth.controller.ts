@@ -134,5 +134,5 @@ export const AuthController = {
     getNewAccessToken,
     logout,
     resetPassword,
-    googleCallbackController
+    googleCallbackController,
 }

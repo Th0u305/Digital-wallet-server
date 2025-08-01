@@ -12,26 +12,42 @@ const checkAuth = (...authRoles: string[]) => async (req: Request, res: Response
 
   try {
 
-    const accessToken = req.headers.authorization
+    const authorizationToken = req.headers.authorization
+    const accessToken = req.cookies.accessToken
     
+    
+    if (!authorizationToken) {
+      throw new AppError(403, "No authorizationToken token Received");
+    }
     if (!accessToken) {
-      throw new AppError(403, "No token Received");
+      throw new AppError(403, "No accessToken token Received");
     }
 
-    const verifiedToken = verifyToken(accessToken,envVars.JWT_ACCESS_SECRET) as JwtPayload;
+    const authoVerifiedToken = verifyToken(authorizationToken,envVars.JWT_ACCESS_SECRET) as JwtPayload;
+    const accessVerifiedToken = verifyToken(accessToken,envVars.JWT_ACCESS_SECRET) as JwtPayload;
+
+    if (authoVerifiedToken._id !== accessVerifiedToken._id && authoVerifiedToken.email !== accessVerifiedToken.email) {
+      throw new AppError(httpStatus.FORBIDDEN, "You're not authorized to perform this action")
+    }
+    
+
     let isUserExist
     
-    if (verifiedToken.role === Role.AGENT) {
-      isUserExist = await Agent.findOne({_id : verifiedToken._id})
-          if (!isUserExist) {
-      throw new AppError(httpStatus.BAD_REQUEST, "User does not Exist")
+    if (authoVerifiedToken.role === Role.AGENT) {
+
+      isUserExist = await Agent.findOne({_id : authoVerifiedToken._id})
+    
+      if (!isUserExist) {
+        throw new AppError(httpStatus.BAD_REQUEST, "User does not Exist")
+      }
     }
-    }
-    else if (verifiedToken.role !== Role.AGENT) {
-      isUserExist = await User.findOne({_id : verifiedToken._id})
-          if (!isUserExist) {
-      throw new AppError(httpStatus.BAD_REQUEST, "User does not Exist")
-    }
+    else if (authoVerifiedToken.role !== Role.AGENT) {
+
+      isUserExist = await User.findOne({_id : authoVerifiedToken._id})
+
+      if (!isUserExist) {
+        throw new AppError(httpStatus.BAD_REQUEST, "User does not Exist")
+      }
     }
   
       
@@ -43,11 +59,11 @@ const checkAuth = (...authRoles: string[]) => async (req: Request, res: Response
       throw new AppError(httpStatus.BAD_REQUEST, "This account is deleted")
     }
 
-    if (!authRoles.includes(verifiedToken.role)) {
+    if (!authRoles.includes(authoVerifiedToken.role)) {
       throw new AppError(403, "You are not permitted to view this route");
     }
 
-    req.user = verifiedToken   
+    req.user = authoVerifiedToken   
     next();
 
   } catch (error) {

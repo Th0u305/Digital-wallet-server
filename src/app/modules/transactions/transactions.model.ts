@@ -22,6 +22,10 @@ const sendMoneySchema = new Schema<SendMoney>(
       trim : true,
       required : [true, "message is required"]
     },
+    senderRole : {
+      type : String,
+      required : [true, "Sender role is required"]
+    }
   }, {
     versionKey : false,
     _id : false,

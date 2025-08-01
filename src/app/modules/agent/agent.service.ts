@@ -137,8 +137,9 @@ const updateAgent = async (userId: string, payload: Partial<IAgent>, decodedToke
 
 }
 
+
 export const AgentServices = {
     getAllAgent,
     createAgentWithWallet,
-    updateAgent
+    updateAgent,
 }
