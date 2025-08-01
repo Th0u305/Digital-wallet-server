@@ -1,8 +1,6 @@
 import { model, Schema } from "mongoose";
 import { IWallet, WalletStatus } from "./wallet.interface";
 
-// --- Wallet Schema with Dynamic Reference ---
-
 const walletSchema = new Schema<IWallet>(
   {
     userId: {
@@ -18,12 +16,16 @@ const walletSchema = new Schema<IWallet>(
       //  two model names
       enum: ["user", "agent"],
     },
-    balance: { type: Number, min: 0, default: 50 },
+    balance: { type: Number,required: true, min: 0, default: 50 },
     walletStatus: {
       type: String,
       enum: Object.values(WalletStatus),
       default: WalletStatus.ACTIVE,
     },
+    transactionId : [{
+      type : Schema.Types.ObjectId,
+      ref : "transaction"
+    }]
   },
   { timestamps: true, versionKey: false }
 );

@@ -51,25 +51,30 @@ const addMoney = async (payload: Partial<ITransaction>, decodedToken: JwtPayload
             wallet.balance += amount;
         }
 
-        const transactionData = await Transaction.create(
-            [
-                {
-                    userId : isUserExists._id,
-                    walletId : isUserExists.walletId,
-                    userModel : isUserExists.role.toLowerCase(),
-                    amount : amount,
-                    status : PAYMENT_STATUS.COMPLETED,
-                    transactionType : payloadTrans,
-                }
-            ],
-            {session}
+        const transactionData = new Transaction(
+            {
+                userId : isUserExists._id,
+                walletId : isUserExists.walletId,
+                userModel : isUserExists.role.toLowerCase(),
+                amount : amount,
+                status : PAYMENT_STATUS.COMPLETED,
+                transactionType : payloadTrans,
+            }
         )
 
-        await wallet.save({session})
+        await transactionData.save({session})
 
+        if (!wallet.transactionId) {
+            wallet.transactionId = []; // Initialize if it doesn't exist
+        }
+
+        wallet.transactionId.push(transactionData._id)
+
+        await wallet.save({session})
+        
         await session.commitTransaction()
 
-        return transactionData[0]
+        return transactionData
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error:any) {

@@ -7,5 +7,5 @@ import { WalletController } from "./wallet.controller";
 
 export const WalletRoutes = Router()
 
-WalletRoutes.post("/", checkAuth(...Object.values(Role)), validateRequest(transactionZodValidation), WalletController.addMoney)
+WalletRoutes.post("/money", checkAuth(...Object.values(Role)), validateRequest(transactionZodValidation), WalletController.addMoney)
 // WalletRoutes.post("/send-to-user/:id")
