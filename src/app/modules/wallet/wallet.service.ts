@@ -183,7 +183,36 @@ const sendMoneyUserToUser = async (paramsId : string , payload: pay, decodedToke
 
 }
 
+
+const transactionHistory =  async(decodedToken: JwtPayload)=>{
+
+    const isUserExists = await User.findById(decodedToken._id)
+    const userWallet = await Wallet.findById(isUserExists?.walletId)
+
+    if (!isUserExists) {
+        throw new AppError (httpStatus.NOT_FOUND, "This user doesn't exists")
+    }
+    if (!userWallet) {
+        throw new AppError(httpStatus.NOT_FOUND, ' Wallet not found or does not belong to the user.')
+    }
+
+    // console.log(userWallet.transactionId);
+
+    const history = await Transaction.find({_id : { $in : userWallet.transactionId}})
+    const count = await Transaction.find({_id : { $in : userWallet.transactionId}}).countDocuments()
+    
+    return {
+        data : history,
+        count : {
+            total : count
+        }
+    }
+    
+
+}
+
 export const WalletService = {
     addMoney,
-    sendMoneyUserToUser
+    sendMoneyUserToUser,
+    transactionHistory
 }
