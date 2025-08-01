@@ -73,12 +73,11 @@ const createAgentWithWallet = async (payload: Partial<IAgent>) =>{
 
         return createdAgent
         
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
 
         // If any error occurs, abort the entire transaction
         await session.abortTransaction();
-        throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to create user and wallet.');
+        return { success: false, message: 'Failed to create user and wallet.', error }
 
     }finally{
       // Finally, always end the session

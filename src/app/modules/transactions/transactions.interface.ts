@@ -2,12 +2,11 @@ import { Types } from "mongoose";
 
 export enum TransactionType {
   ADD_MONEY = "ADD_MONEY",
-  WITHDRAW = "WITHDRAW",
   SEND_MONEY = "SEND_MONEY",
   CASH_OUT = "CASH_OUT",
-  COMMISSION = "COMMISSION",
-  DEPOSIT = "DEPOSIT",
-  TRANSFER = "TRANSFER",
+  // COMMISSION = "COMMISSION",
+  // DEPOSIT = "DEPOSIT",
+  // TRANSFER = "TRANSFER",
 }
 
 export enum PAYMENT_STATUS {
@@ -25,14 +24,14 @@ export interface SendMoney {
   senderId : Types.ObjectId,
   receiverId : Types.ObjectId,
   amount : number,
-  message?: string
+  message: string,
 }
 
 export interface ITransaction {
   userId: string;
   walletId: string;
   userModel: string;
-  // sendMoney? : SendMoney
+  sendMoney? : SendMoney
   amount: number;
   transactionType: TransactionType;
   status?: PAYMENT_STATUS;

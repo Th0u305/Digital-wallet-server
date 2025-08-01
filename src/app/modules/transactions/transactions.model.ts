@@ -1,19 +1,33 @@
 import { model, Schema } from "mongoose";
 import { ITransaction, PAYMENT_STATUS, SendMoney, TransactionType } from "./transactions.interface";
 
-// const sendMoneySchema = new Schema<SendMoney>(
-//   {
-//     senderId : {
-//       type : Schema.Types.ObjectId,
-//       ref : "user",
-//       required: [true , "Sender id is required"],
-//       unique : true
-//     },
-//     receiverId : {
-
-//     }
-//   }
-// )
+const sendMoneySchema = new Schema<SendMoney>(
+  {
+    senderId : {
+      type : Schema.Types.ObjectId,
+      ref : "user",
+      required: [true , "Sender id is required"],
+    },
+    receiverId : {
+      type : Schema.Types.ObjectId,
+      ref : "user",
+      required: [true , "Receiver id is required"],
+    },
+    amount : {
+      type : Number,
+      required : [true, "Amount is missing"]
+    },
+    message : {
+      type : String,
+      trim : true,
+      required : [true, "message is required"]
+    },
+  }, {
+    versionKey : false,
+    _id : false,
+    timestamps : false
+  }
+)
 
 const transactionSchema = new Schema<ITransaction>(
   {
@@ -31,7 +45,7 @@ const transactionSchema = new Schema<ITransaction>(
       type : String,
       required : [true, "userModel is required"]
     },
-    // sendMoney : 
+    sendMoney : sendMoneySchema,
     amount: {
       type: Number,
       required: [true, 'Transaction amount is required.'],
