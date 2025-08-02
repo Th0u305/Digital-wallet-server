@@ -1,6 +1,6 @@
 import { model, Schema } from "mongoose";
 import { IAuthProvider, IsActive, Role } from "../user/user.interface";
-import { AgentProfile, IAgent } from "./agent.interface";
+import { IAgent } from "./agent.interface";
 
 const authProviderSchema = new Schema<IAuthProvider>({
     provider : { type : String, required: true },
@@ -9,16 +9,6 @@ const authProviderSchema = new Schema<IAuthProvider>({
     versionKey : false,
     timestamps : false,
     _id : false
-})
-
-const agentInfo = new Schema<AgentProfile>({
-    nidNumber : { type : String , required : true , unique : true},
-    commissionRate : { type : Number, default : 0.5},
-    tradeLicenseNumber : { type : String}
-},{
-    _id : false,
-    timestamps : false,
-    versionKey : false
 })
 
 const agentSchema = new Schema<IAgent>({
@@ -49,7 +39,9 @@ const agentSchema = new Schema<IAgent>({
     },
     isVerified : { type : Boolean, default : true},
     walletId : { type : Schema.Types.ObjectId , ref : "wallet"},
-    agentInfo : agentInfo    
+    nidNumber : { type : String , unique : true, required: true},
+    commissionRate : { type : Number, default : 0.5},
+    tradeLicenseNumber : { type : String}  
 },{
     versionKey : false,
     timestamps : true

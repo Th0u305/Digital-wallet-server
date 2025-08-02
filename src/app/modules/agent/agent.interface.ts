@@ -1,12 +1,6 @@
 import { Types } from "mongoose";
 import { IAuthProvider, IsActive, Role } from "../user/user.interface";
 
-export interface AgentProfile{
-    nidNumber : string
-    commissionRate? : number
-    tradeLicenseNumber? : string
-}
-
 export interface IAgent {
     _id?: Types.ObjectId
     name : string;
@@ -21,7 +15,9 @@ export interface IAgent {
     auths : IAuthProvider
     walletId? : Types.ObjectId
     role : Role
-    agentInfo : AgentProfile
+    nidNumber : string
+    commissionRate? : number
+    tradeLicenseNumber? : string
     success? : string
     message?: string
 }

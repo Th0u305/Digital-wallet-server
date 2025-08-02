@@ -8,10 +8,10 @@ import { Response } from "express"
 import { Wallet } from "../wallet/wallet.model"
 import mongoose, { Model } from "mongoose"
 import { Agent } from "../agent/agent.model"
-
+import { IAgent } from "../agent/agent.interface"
 
 // create user
-const createUserWithWallet = async (payload: Partial<IUser>) =>{
+const createUserWithWallet = async (payload: Partial<IUser | IAgent>) =>{
     
     const { email, password, ...rest} = payload
 
@@ -74,7 +74,7 @@ const createUserWithWallet = async (payload: Partial<IUser>) =>{
 }
 
 // update user
-const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken: JwtPayload, res:Response) =>{
+const updateUser = async (userId: string, payload: Partial<IAgent>, decodedToken: JwtPayload, res:Response) =>{
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let Model: Model<any>;
@@ -86,15 +86,25 @@ const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken:
         case 'AGENT':
             Model = Agent
             break;
+        case 'ADMIN':
+            Model = User
+            break;
+        case 'SUPER_ADMIN':
+            Model = User
+            break;
         default:
-            throw new AppError(httpStatus.BAD_REQUEST, 'Invalid view specified.');
+            throw new AppError(httpStatus.BAD_REQUEST, 'Invalid role specified.');
     }
 
-    const isUserExists = await Model.findById(userId)
+    const session = await mongoose.startSession()
 
-    
+    try {
 
-    if (!isUserExists) {
+        session.startTransaction()
+
+    const isUserExists = await Model.findById(userId).session(session)
+
+        if (!isUserExists) {
         throw new AppError(httpStatus.NOT_FOUND, "User not found")
     }
 
@@ -115,7 +125,7 @@ const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken:
     let hasChanges = false
 
     for (const fieldsData in payload ) {
-        if (payload[fieldsData as keyof IUser] !== isUserExists[fieldsData as keyof IUser]) {
+            if (payload[fieldsData as keyof IAgent ] !== isUserExists[fieldsData as keyof IAgent]) {
             hasChanges = true
             break
         }
@@ -125,8 +135,18 @@ const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken:
         throw new AppError(httpStatus.BAD_REQUEST, "Please provide new data to update.")
     }
 
-    const newUpdateUser = await User.findByIdAndUpdate(userId, payload , {new: true, runValidators : true}).select("-password")
+    const newUpdateUser = await Model.findByIdAndUpdate(userId, payload , {new: true, runValidators : true}).select("-password").session(session)
+
+    await session.commitTransaction()    
     return newUpdateUser
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error:any) {
+        await session.abortTransaction()
+        return { success: false, message:  `Transaction failed: ${error.message}`}    
+    }finally{
+        session.endSession()
+    }
 }
 
 export const UserServices = {

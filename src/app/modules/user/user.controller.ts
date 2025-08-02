@@ -27,9 +27,9 @@ const updateUser = catchAsync( async(req:Request, res:Response)=>{
     const result = await UserServices.updateUser(userId, payload, verifiedToken as JwtPayload, res)
 
     sendResponse(res,{
-        success : true,
-        statusCode : httpStatus.CREATED,
-        message : "User updated successfully",
+        success : result.success === false ? false : true,
+        statusCode : result.success === false ? httpStatus.BAD_REQUEST : httpStatus.OK,
+        message : result.message ? result.message : "User updated successfully",
         data : result
     })
 })
