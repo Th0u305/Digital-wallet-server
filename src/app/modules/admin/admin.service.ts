@@ -96,10 +96,18 @@ const getAggregatedData = async (req:Request) => {
             ]
         ).sort(sortCriteria)
         count = result.length
-    }else{
+    }else if(filterBy === "wallet"){
         result = await Model.aggregate([
             isWallet,
-            filterBy === "wallet" ? removeallTransactions : removeWallet,
+        isTransaction,
+        removeallTransactions,
+        isLimit
+        ]).sort(sortCriteria)
+    }
+    else if(filterBy === "transaction"){
+        result = await Model.aggregate([
+            isWallet,
+            removeWallet,
         isTransaction,
         isLimit
         ]).sort(sortCriteria)
