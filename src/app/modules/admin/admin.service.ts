@@ -6,7 +6,7 @@ import AppError from "../../errorHelper/AppError";
 import httpStatus from "http-status-codes"
 import { Wallet } from "../wallet/wallet.model";
 import { Transaction } from "../transactions/transactions.model";
-import { WalletStatus } from "../wallet/wallet.interface";
+// import { WalletStatus } from "../wallet/wallet.interface";
 
 
 const getAggregatedData = async (req:Request) => {
