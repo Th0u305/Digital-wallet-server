@@ -110,9 +110,7 @@ const moneyActions = async (paramsId : string , amount : number , transType : st
     }
 
     let senderUser 
-
     let receiverUser = await User.findById(paramsId) 
-    let receiverWallet
 
 
     if (decodedToken.role === Role.AGENT) {
@@ -125,7 +123,6 @@ const moneyActions = async (paramsId : string , amount : number , transType : st
 
     if (!receiverUser) {
         receiverUser = await Agent.findById(paramsId) 
-        receiverWallet = await Wallet.findById(receiverUser?.walletId)
     }
 
     if (receiverUser?.role === Role.AGENT && senderUser?.role === Role.USER) {
@@ -137,6 +134,8 @@ const moneyActions = async (paramsId : string , amount : number , transType : st
     }
 
     const senderWallet = await Wallet.findById(senderUser?.walletId)
+    const receiverWallet = await Wallet.findById(receiverUser?.walletId)
+
 
     if (!senderWallet) {
         throw new AppError(httpStatus.NOT_FOUND, 'This user Wallet not found or does not belong to the user.')
