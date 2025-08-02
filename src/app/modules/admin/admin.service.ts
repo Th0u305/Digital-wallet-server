@@ -66,6 +66,21 @@ const getAggregatedData = async (req:Request) => {
         }
     }
 
+    const removeWallet = {
+              $project: {
+            // Exclude fields you don't need, like the password
+            walletData: 0,
+            // You can also rename fields or reshape the document here
+        }
+    }
+    const removeallTransactions = {
+              $project: {
+            // Exclude fields you don't need, like the password
+            allTransactions: 0,
+            // You can also rename fields or reshape the document here
+        }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sortCriteria: any = {};
     sortCriteria[sortBy as string] = -1;
@@ -84,6 +99,7 @@ const getAggregatedData = async (req:Request) => {
     }else{
         result = await Model.aggregate([
             isWallet,
+            filterBy === "wallet" ? removeallTransactions : removeWallet,
         isTransaction,
         isLimit
         ]).sort(sortCriteria)
