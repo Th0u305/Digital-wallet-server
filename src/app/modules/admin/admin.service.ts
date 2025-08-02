@@ -50,9 +50,19 @@ const getAggregatedData = async (req:Request) => {
 
         $lookup: {
             from: "transactions",
-            localField: view === "wallet" ? "transactionId" : "walletData.transactionId", // The array of IDs from the wallet
+            localField: "walletData.transactionId", // The array of IDs from the wallet
             foreignField: "_id",   // The ID on each transaction document
             as: "allTransactions"  // This creates the new array with the full transaction documents
+        }
+    }
+
+    const isWallet2 = {
+    
+        $lookup: {
+            from: "transactions",
+            localField: "transactionId", // The ID on the Agent document
+            foreignField: "_id",     // The ID on the Wallet document
+            as: "walletData"
         }
     }
 
@@ -62,22 +72,27 @@ const getAggregatedData = async (req:Request) => {
     
     const isLimit = { $limit: Number(limit) }
 
-    if (view === "wallet" || (view === "transaction" && filterBy === "wallet")) {
+    if (view === "wallet" || view === "transaction") {
 
         result = await Model.aggregate(
             [
-                isWallet,
-                isTransaction,
-                isLimit,
+                isWallet2,
+                isLimit
             ]
         ).sort(sortCriteria)
         count = result.length
+    }else{
+        result = await Model.aggregate([
+            isWallet,
+        isTransaction,
+        isLimit
+        ]).sort(sortCriteria)
     }
 
-    if (!filterBy) {
-        result = await Model.find().sort(sortCriteria)
-        count = result.length
-    }
+    // if (!filterBy) {
+    //     result = await Model.find().sort(sortCriteria)
+    //     count = result.length
+    // }
     
 
     const data = {
