@@ -6,7 +6,7 @@ import { User } from "./user.model"
 import httpStatus from "http-status-codes"
 import { Response } from "express"
 import { Wallet } from "../wallet/wallet.model"
-import mongoose from "mongoose"
+import mongoose, { Model } from "mongoose"
 import { Agent } from "../agent/agent.model"
 
 
@@ -76,11 +76,23 @@ const createUserWithWallet = async (payload: Partial<IUser>) =>{
 // update user
 const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken: JwtPayload, res:Response) =>{
 
-    let isUserExists = await User.findById(userId)
-    
-    if (!isUserExists) {
-        isUserExists = await Agent.findById(userId)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let Model: Model<any>;
+
+        switch (decodedToken.role) {
+        case 'USER':
+            Model = User;
+            break;
+        case 'AGENT':
+            Model = Agent
+            break;
+        default:
+            throw new AppError(httpStatus.BAD_REQUEST, 'Invalid view specified.');
     }
+
+    const isUserExists = await Model.findById(userId)
+
+    
 
     if (!isUserExists) {
         throw new AppError(httpStatus.NOT_FOUND, "User not found")
