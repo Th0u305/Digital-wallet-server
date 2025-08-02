@@ -23,34 +23,29 @@ const checkAuth = (...authRoles: string[]) => async (req: Request, res: Response
       throw new AppError(403, "No accessToken token Received");
     }
 
-    const authoVerifiedToken = verifyToken(authorizationToken,envVars.JWT_ACCESS_SECRET) as JwtPayload;
+    const headerVerifiedToken = verifyToken(authorizationToken,envVars.JWT_ACCESS_SECRET) as JwtPayload;
     const accessVerifiedToken = verifyToken(accessToken,envVars.JWT_ACCESS_SECRET) as JwtPayload;
 
-    if (authoVerifiedToken._id !== accessVerifiedToken._id && authoVerifiedToken.email !== accessVerifiedToken.email) {
-      throw new AppError(httpStatus.FORBIDDEN, "You're not authorized to perform this action")
+    if (headerVerifiedToken._id !== accessVerifiedToken._id && headerVerifiedToken.email !== accessVerifiedToken.email) {
+
+      throw new AppError(httpStatus.FORBIDDEN, "Token Error")
     }
     
-
     let isUserExist
     
-    if (authoVerifiedToken.role === Role.AGENT) {
+    if (headerVerifiedToken.role === Role.AGENT) {
 
-      isUserExist = await Agent.findOne({_id : authoVerifiedToken._id})
+      isUserExist = await Agent.findById(headerVerifiedToken._id)
+
+    }else{
+
+      isUserExist = await User.findById(headerVerifiedToken._id)
+    }
+
+    if (!isUserExist) {      
+      throw new AppError(httpStatus.BAD_REQUEST, "User does not Exist")
+    }
     
-      if (!isUserExist) {
-        throw new AppError(httpStatus.BAD_REQUEST, "User does not Exist")
-      }
-    }
-    else if (authoVerifiedToken.role !== Role.AGENT) {
-
-      isUserExist = await User.findOne({_id : authoVerifiedToken._id})
-
-      if (!isUserExist) {
-        throw new AppError(httpStatus.BAD_REQUEST, "User does not Exist")
-      }
-    }
-  
-      
     if (isUserExist?.isActive !== IsActive.ACTIVE) {
       throw new AppError(httpStatus.BAD_REQUEST, `This account is ${isUserExist?.isActive}`)
     }
@@ -59,11 +54,11 @@ const checkAuth = (...authRoles: string[]) => async (req: Request, res: Response
       throw new AppError(httpStatus.BAD_REQUEST, "This account is deleted")
     }
 
-    if (!authRoles.includes(authoVerifiedToken.role)) {
+    if (!authRoles.includes(headerVerifiedToken.role)) {
       throw new AppError(403, "You are not permitted to view this route");
     }
 
-    req.user = authoVerifiedToken   
+    req.user = headerVerifiedToken   
     next();
 
   } catch (error) {

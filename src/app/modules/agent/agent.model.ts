@@ -14,7 +14,7 @@ const authProviderSchema = new Schema<IAuthProvider>({
 const agentInfo = new Schema<AgentProfile>({
     nidNumber : { type : String , required : true , unique : true},
     commissionRate : { type : Number, default : 0.5},
-    tradeLicenseNumber : { type : String, unique: true}
+    tradeLicenseNumber : { type : String}
 },{
     _id : false,
     timestamps : false,

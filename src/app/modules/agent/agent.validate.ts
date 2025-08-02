@@ -41,7 +41,7 @@ export const createAgentSchema = z.object({
     agentInfo : z.object({
         nidNumber: z.string().min(10, "A valid NID number is required"),
         commissionRate: z.number().positive().optional(),
-        tradeLicenseNumber: z.string().optional(),
+        tradeLicenseNumber: z.string().default("aaaaa1234").optional(),
     })
 });
 

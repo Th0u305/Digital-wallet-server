@@ -8,8 +8,9 @@ import { Role } from "../user/user.interface"
 import { Agent } from "../agent/agent.model"
 import AppError from "../../errorHelper/AppError"
 import httpStatus from "http-status-codes"
+import { WalletStatus } from "./wallet.interface"
 
-// Money transactions
+// add money
 const addMoney = async (payload: Partial<ITransaction>, decodedToken: JwtPayload) =>{
 
     const { amount, transactionType: payloadTrans } = payload
@@ -41,6 +42,10 @@ const addMoney = async (payload: Partial<ITransaction>, decodedToken: JwtPayload
 
         if (!wallet) {
             return { success: false, message: 'Wallet not found or does not belong to the user.' }
+        }
+
+        if (wallet.walletStatus !== WalletStatus.ACTIVE) {
+            return { success : false, message :  `Your wallet is ${wallet.walletStatus?.toLocaleLowerCase()} . Please consult with admin` }
         }
 
         if (payload.transactionType !== TransactionType.ADD_MONEY){
@@ -87,6 +92,7 @@ const addMoney = async (payload: Partial<ITransaction>, decodedToken: JwtPayload
     }    
 }
 
+// agent send money to any & user "CASH_OUT" ,"SEND_MONEY"
 const sendMoney = async (paramsId : string , amount : number , transType : string , decodedToken : JwtPayload) =>{
 
     if (!paramsId) {
@@ -99,40 +105,45 @@ const sendMoney = async (paramsId : string , amount : number , transType : strin
         throw new AppError(httpStatus.NOT_FOUND, "TransactionType is missing")   
     }
 
-    if (decodedToken.role === Role.USER) {
-        if (transType === TransactionType.ADD_MONEY) {
-            throw new AppError(httpStatus.FORBIDDEN, "You cannot perform this action")
-        }
+    if (transType === TransactionType.ADD_MONEY) {
+        throw new AppError(httpStatus.FORBIDDEN, "You cannot perform this action")
     }
 
     let senderUser 
-    let senderWallet
 
-    let receiverUser 
-    let receiverWallet 
+    let receiverUser = await User.findById(paramsId) 
+    let receiverWallet
+
 
     if (decodedToken.role === Role.AGENT) {
-
         senderUser = await Agent.findById(decodedToken._id)   
-        senderWallet = await Wallet.findById(senderUser?.walletId)
+    }
 
-        receiverUser = await Agent.findById(paramsId)
+    if (decodedToken.role !== Role.AGENT) {
+        senderUser = await User.findById(decodedToken._id)
+    }
+
+    if (!receiverUser) {
+        receiverUser = await Agent.findById(paramsId) 
         receiverWallet = await Wallet.findById(receiverUser?.walletId)
     }
-    if (decodedToken.role !== Role.AGENT) {
 
-        senderUser = await User.findById(decodedToken._id)
-        senderWallet = await Wallet.findById(senderUser?.walletId)
-
-        receiverUser = await User.findById(paramsId)
-        receiverWallet = await Wallet.findById(receiverUser?.walletId)
+    if (receiverUser?.role === Role.AGENT && senderUser?.role === Role.USER && transType.toUpperCase() === TransactionType.ADD_MONEY) {
+        throw new AppError(httpStatus.BAD_REQUEST, "User cannot send money to user you can cash-out")
     }
     
     if (!senderUser) {
         throw new AppError (httpStatus.NOT_FOUND, "This user account doesn't exists")
     }
+
+    const senderWallet = await Wallet.findById(senderUser?.walletId)
+
     if (!senderWallet) {
         throw new AppError(httpStatus.NOT_FOUND, 'This user Wallet not found or does not belong to the user.')
+    }
+
+    if (senderWallet.walletStatus !== WalletStatus.ACTIVE) {
+        throw new AppError(httpStatus.FORBIDDEN, `Your account is ${senderWallet.walletStatus?.toLocaleLowerCase()} . Please consult with admin`)
     }
 
     if (!receiverUser) {
@@ -140,6 +151,10 @@ const sendMoney = async (paramsId : string , amount : number , transType : strin
     }
     if (!receiverWallet) {
         throw new AppError(httpStatus.NOT_FOUND, 'Receiver account Wallet not found or does not belong to the user.')
+    }
+
+    if (receiverWallet.walletStatus !== WalletStatus.ACTIVE) {
+        throw new AppError(httpStatus.FORBIDDEN, `Receiver account is ${receiverWallet.walletStatus?.toLocaleLowerCase()} . Please consult with admin`)
     }
 
     const session = await mongoose.startSession();
@@ -193,28 +208,31 @@ const sendMoney = async (paramsId : string , amount : number , transType : strin
     }
 }
 
-
 const transactionHistory =  async(decodedToken: JwtPayload)=>{
 
     let isUserExists 
-    let userWallet 
 
     if (decodedToken.role === Role.AGENT) {
+
        isUserExists = await Agent.findById(decodedToken._id)
-       userWallet = await Wallet.findById(isUserExists?.walletId)
+
+    }else{
+
+        isUserExists = await User.findById(decodedToken._id)
     }
-    
-    isUserExists = await User.findById(decodedToken._id)
-    userWallet = await Wallet.findById(isUserExists?.walletId)
 
     if (!isUserExists) {
         throw new AppError (httpStatus.NOT_FOUND, "This user doesn't exists")
     }
+
+    const userWallet = await Wallet.findById(isUserExists?.walletId)
+
     if (!userWallet) {
         throw new AppError(httpStatus.NOT_FOUND, ' Wallet not found or does not belong to the user.')
     }
-
-    // console.log(userWallet.transactionId);
+    if (userWallet.walletStatus !== WalletStatus.ACTIVE) {
+        throw new AppError(httpStatus.FORBIDDEN, `Your account is ${userWallet.walletStatus?.toLocaleLowerCase()} . Please consult with admin`)
+    }
 
     const history = await Transaction.find({_id : { $in : userWallet.transactionId}})
     const count = await Transaction.find({_id : { $in : userWallet.transactionId}}).countDocuments()
@@ -225,8 +243,6 @@ const transactionHistory =  async(decodedToken: JwtPayload)=>{
             total : count
         }
     }
-    
-
 }
 
 export const WalletService = {

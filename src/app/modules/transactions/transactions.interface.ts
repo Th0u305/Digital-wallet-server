@@ -38,4 +38,6 @@ export interface ITransaction {
   status?: PAYMENT_STATUS;
   description?: string;
   reference?: string;
+  message?: string
+  success?: string
 }

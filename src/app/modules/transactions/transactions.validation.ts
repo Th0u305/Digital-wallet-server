@@ -19,7 +19,7 @@ export const transactionZodValidation = z.object({
         .optional()
 })
 
-export const sendMoneyUserToUser = z.object({
+export const sendMoney = z.object({
     amount : z
         .number()
         .min(10,{ message : 'Minimum transactions amount is 10'}),

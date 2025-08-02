@@ -1,25 +1,14 @@
 import { JwtPayload } from "jsonwebtoken"
 import AppError from "../../errorHelper/AppError"
 import { Encrypt } from "../../utils/encrypt"
-import { IAuthProvider, IUser, Role } from "./user.interface"
+import { IAuthProvider, IUser } from "./user.interface"
 import { User } from "./user.model"
 import httpStatus from "http-status-codes"
 import { Response } from "express"
 import { Wallet } from "../wallet/wallet.model"
 import mongoose from "mongoose"
+import { Agent } from "../agent/agent.model"
 
-
-// get all user
-const getAllUsers = async () =>{
-    const users = await User.find({})
-    const totalUsers = await User.countDocuments()
-    return {
-        data : users,
-        meta : {
-            total : totalUsers
-        }
-    }
-}
 
 // create user
 const createUserWithWallet = async (payload: Partial<IUser>) =>{
@@ -87,8 +76,12 @@ const createUserWithWallet = async (payload: Partial<IUser>) =>{
 // update user
 const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken: JwtPayload, res:Response) =>{
 
-    const isUserExists = await User.findById(userId)
+    let isUserExists = await User.findById(userId)
     
+    if (!isUserExists) {
+        isUserExists = await Agent.findById(userId)
+    }
+
     if (!isUserExists) {
         throw new AppError(httpStatus.NOT_FOUND, "User not found")
     }
@@ -104,19 +97,8 @@ const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken:
           secure : false,
           sameSite : "lax"
         })
-        throw new AppError(httpStatus.FORBIDDEN , "You're not authorized to perform this action")
+        throw new AppError(httpStatus.FORBIDDEN , "Token error")
     }
-    
-
-    if (payload.role) {
-        if (decodedToken.role !== Role.SUPER_ADMIN) {
-            throw new AppError(httpStatus.FORBIDDEN, "You're not authorized to perform this action")
-        }
-        if (payload.role && decodedToken.role !== Role.SUPER_ADMIN) {
-            throw new AppError(httpStatus.FORBIDDEN, "You're not authorized to perform this action")
-        }
-    }
-
 
     let hasChanges = false
 
@@ -128,16 +110,14 @@ const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken:
     }
 
     if (!hasChanges) {
-        throw new AppError(httpStatus.BAD_REQUEST, "No changes detected. Please provide new data to update.")
+        throw new AppError(httpStatus.BAD_REQUEST, "Please provide new data to update.")
     }
 
     const newUpdateUser = await User.findByIdAndUpdate(userId, payload , {new: true, runValidators : true}).select("-password")
     return newUpdateUser
-
 }
 
 export const UserServices = {
-    getAllUsers,
     createUserWithWallet,
     updateUser
 }

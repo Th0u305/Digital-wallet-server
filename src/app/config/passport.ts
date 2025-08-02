@@ -8,7 +8,7 @@ import { Agent } from "../modules/agent/agent.model";
 import { Encrypt } from "../utils/encrypt";
 
 
-const validateCredentials = async (userOrAgent: Partial<IUser>, password: string) => {
+const validateCredentials =  (userOrAgent: Partial<IUser>, password: string) => {
 
     const isGoogleAuthenticated = userOrAgent?.auths?.provider === "google"
 
@@ -16,7 +16,7 @@ const validateCredentials = async (userOrAgent: Partial<IUser>, password: string
         return { error: "You have authenticated through google. If you want to login with credentials, then at first login with google and set a password for your gmail and then you can login with email and password" };
     }
 
-    const isPasswordMatched = await Encrypt.compare(password, userOrAgent.password as string)
+    const isPasswordMatched = Encrypt.compare(password, userOrAgent.password as string)
 
     if (!isPasswordMatched) {
         return { error: "Incorrect password." };
@@ -49,23 +49,19 @@ passport.use(
 
                 entity = await User.findOne({ email })
 
-                if (!entity) {
-                    return done(null, false, { message: "User not found with this email." });
-                }
-
             } else if (role.toUpperCase() === Role.AGENT) {
 
                 entity = await Agent.findOne({ email })
 
-                if (!entity) {
-                    return done(null, false, { message: "Agent not found with this email." });
-                }
-
             } else {
                 return done(null, false, { message: "Invalid role specified." });
             }
+            
+            if (!entity) {
+                return done(null, false, { message: "Agent not found with this email." });
+            }
 
-            const validationResult = await validateCredentials(entity, password);
+            const validationResult =  validateCredentials(entity, password);
 
             if (validationResult.error) {
                 return done(null, false, { message: validationResult.error });

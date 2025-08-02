@@ -31,5 +31,7 @@ export interface IUser {
     isVerified?: boolean;
     auths : IAuthProvider
     walletId? : Types.ObjectId
-    role : Role
+    role : Role,
+    message?: string
+    success?: string
 }

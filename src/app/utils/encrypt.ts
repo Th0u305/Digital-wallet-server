@@ -2,16 +2,16 @@ import bcryptjs from "bcryptjs"
 import { envVars } from "../config/env"
 
 
-const CreateSuperAdmin = () =>{
+const CreateSuperAdmin = async () =>{
     return bcryptjs.hash(envVars.SUPER_ADMIN_PASSWORD, Number(envVars.BCRYPT_SALT_ROUND))
 }
 
-const hashPassword = async (pass: string) =>{
-    return await bcryptjs.hash(pass, Number(envVars.BCRYPT_SALT_ROUND))
+const hashPassword = (pass: string) =>{
+    return  bcryptjs.hash(pass, Number(envVars.BCRYPT_SALT_ROUND))
 }
 
-const compare = async (pass: string, userPassword: string) =>{
-    return await bcryptjs.compare(pass, userPassword)
+const compare = (pass: string, userPassword: string) =>{
+    return  bcryptjs.compare(pass, userPassword)
 }
 
 export const Encrypt = {

@@ -6,10 +6,12 @@ export enum WalletStatus {
   SUSPENDED = 'SUSPENDED',
 }
 
-export interface IWallet extends Document {
+export interface IWallet {
   userId: Types.ObjectId; // Reference to the User
   balance: number;
   userModel : string
   walletStatus?: WalletStatus;
-  transactionId? : Types.ObjectId[]
+  transactionId? : Types.ObjectId[],
+  message?: string
+  success?: string
 }

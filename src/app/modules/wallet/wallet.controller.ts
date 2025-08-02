@@ -13,14 +13,14 @@ const addMoney = catchAsync( async(req:Request, res:Response)=>{
     const result = await WalletService.addMoney(data, verifiedToken as JwtPayload)
 
     sendResponse(res,{
-        success : true,
-        statusCode : httpStatus.CREATED,
-        message : "Transaction complete",
+        success : result.success === false ? false : true,
+        statusCode : result.success === false ? httpStatus.BAD_REQUEST : httpStatus.CREATED,
+        message : result.message ? result.message : "Transaction completed",
         data : result
     })
 })
 
-// send money user to user
+// send money 
 const sendMoney = catchAsync( async (req: Request, res:Response)=>{
 
     const paramsId = req.params.id
@@ -30,9 +30,9 @@ const sendMoney = catchAsync( async (req: Request, res:Response)=>{
     const result = await WalletService.sendMoney(paramsId, amount, transactionType , decodedToken as JwtPayload)
 
     sendResponse(res,{
-        success : true,
-        statusCode : httpStatus.OK,
-        message : "Successfully send money to the user",
+        success : result.success === false ? false : true,
+        statusCode : result.success === false ? httpStatus.BAD_REQUEST : httpStatus.OK,
+        message : result.message ? result.message : "Successfully send money",
         data : result
     })
 })

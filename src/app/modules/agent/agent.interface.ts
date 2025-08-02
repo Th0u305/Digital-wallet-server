@@ -22,4 +22,6 @@ export interface IAgent {
     walletId? : Types.ObjectId
     role : Role
     agentInfo : AgentProfile
+    success? : string
+    message?: string
 }

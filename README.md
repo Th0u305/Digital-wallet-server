@@ -12,12 +12,12 @@ This API emulates the core functionality of popular digital wallet services (lik
 
 ## ✨ Key Features
 
--   **JWT-Based Authentication**: Secure login system for all roles using JSON Web Tokens.
+-   **JWT-Based Authentication**: Secure login system for all roles using JSON Web Tokens, with refresh token support.
 -   **Role-Based Access Control (RBAC)**: Three distinct roles (Admin, User, Agent) with specific permissions and protected routes.
 -   **Secure Password Management**: Passwords are securely hashed using `bcrypt`.
 -   **Automatic Wallet Creation**: Users and Agents automatically get a wallet with an initial balance upon registration.
--   **Transactional Logic**: Core financial operations (add, withdraw, send money) are handled using MongoDB transactions to ensure atomicity and data consistency.
--e   **Modular Architecture**: The codebase is organized into modules for scalability and easy maintenance.
+-   **Transactional Logic**: Core financial operations are handled using MongoDB transactions to ensure atomicity and data consistency.
+-   **Modular Architecture**: The codebase is organized into modules for scalability and easy maintenance.
 -   **Request Validation**: Incoming request data is validated using Zod to prevent invalid data from reaching the business logic.
 
 ---
@@ -26,7 +26,7 @@ This API emulates the core functionality of popular digital wallet services (lik
 
 -   **Backend**: Node.js, Express.js
 -   **Database**: MongoDB with Mongoose ODM
--   **Authentication**: JSON Web Tokens (JWT)
+-   **Authentication**: JSON Web Tokens (JWT), Google OAuth
 -   **Password Hashing**: Bcrypt
 -   **Validation**: Zod
 -   **Development**: TypeScript, ESLint, Prettier
@@ -35,41 +35,44 @@ This API emulates the core functionality of popular digital wallet services (lik
 
 ## 🚀 API Endpoints
 
-### Authentication (`/api/v1/auth`)
+### Authentication Endpoints (`/api/v1/auth`)
 
-| Method | Endpoint         | Description                    | Access |
-| :----- | :--------------- | :----------------------------- | :----- |
-| `POST` | `/register`      | Register a new User or Agent.  | Public |
-| `POST` | `/login`         | Log in to get an access token. | Public |
+| Method | Endpoint           | Description                                    | Access |
+| :----- | :----------------- | :--------------------------------------------- | :----- |
+| `POST` | `/login`           | Log in with email and password.                | Public |
+| `POST` | `/refresh-token`   | Get a new access token using a refresh token.  | Public |
+| `POST` | `/logout`          | Log out the user.                              | User, Agent, Admin |
+| `POST` | `/reset-password`  | Initiate a password reset process.             | Public |
+| `GET`  | `/google`          | Initiate login/registration with Google.       | Public |
 
 ### User Endpoints (`/api/v1/users`)
 
-| Method | Endpoint            | Description                               | Access |
-| :----- | :------------------ | :---------------------------------------- | :----- |
-| `POST` | `/add-money`        | Deposit money into one's own wallet.      | User   |
-| `POST` | `/send-money`       | Send money to another User.               | User   |
-| `GET`  | `/transactions`     | Get personal transaction history.         | User   |
-| `GET`  | `/me`               | Get the profile of the logged-in user.    | User   |
+| Method | Endpoint            | Description                                  | Access |
+| :----- | :------------------ | :------------------------------------------- | :----- |
+| `POST` | `/register`         | Register a new User account.                 | Public |
+| `PATCH`| `/update-user/:id`  | Update profile information.                  | User, Agent |
 
 ### Agent Endpoints (`/api/v1/agents`)
 
-| Method | Endpoint            | Description                               | Access |
-| :----- | :------------------ | :---------------------------------------- | :----- |
-| `POST` | `/cash-in`          | Add money to a User's wallet.             | Agent  |
-| `POST` | `/cash-out`         | Withdraw money from a User's wallet.      | Agent  |
-| `GET`  | `/transactions`     | Get personal transaction history.         | Agent  |
-| `GET`  | `/me`               | Get the profile of the logged-in agent.   | Agent  |
+| Method | Endpoint            | Description                                  | Access |
+| :----- | :------------------ | :------------------------------------------- | :----- |
+| `POST` | `/register`         | Register a new Agent account.                | Public |
+
+### Wallet Endpoints (`/api/v1/wallets`)
+
+| Method | Endpoint              | Description                                                |    Access   |
+| :----- | :-------------------- | :--------------------------------------------------------- | :---------- |
+| `GET`  | `/transactionHistory` | Get personal transaction history.                          | User, Agent |
+| `POST` | `/add-money`          | Deposit money into one's own wallet.                       | User, Agent |
+| `POST` | `/moneyActions/:id`   | Perform actions like 'withdraw' or 'send-money'.           | User, Agent |
 
 ### Admin Endpoints (`/api/v1/admin`)
 
-| Method | Endpoint                  | Description                                | Access |
-| :----- | :------------------------ | :----------------------------------------- | :----- |
-| `GET`  | `/users`                  | Get a list of all users.                   | Admin  |
-| `GET`  | `/agents`                 | Get a list of all agents.                  | Admin  |
-| `GET`  | `/transactions`           | Get a list of all transactions.            | Admin  |
-| `PATCH`| `/wallets/block/:id`      | Block a specific user or agent wallet.     | Admin  |
-| `PATCH`| `/wallets/unblock/:id`    | Unblock a specific user or agent wallet.   | Admin  |
-| `PATCH`| `/agents/approve/:id`     | Approve a pending agent registration.      | Admin  |
+| Method | Endpoint                        | Description                                                                                              | Access |
+| :----- | :------------------------------ | :------------------------------------------------------------------------------------------------------- | :----- |
+| `GET`  | `/getData`                      | Dynamically fetch, filter, and sort data across the system. (e.g., `?view=user&filterBy=wallet`)         | Admin  |
+| `PATCH`| `/walletAction/:action/:userId` | Perform an action (e.g., 'BLOCK', 'SUSPEND') on a user's or Agent's wallet.                              | Admin  |
+| `PATCH`| `/agents/approve/:id`           | Approve a pending agent registration.                                                                    | Admin  |
 
 ---
 
