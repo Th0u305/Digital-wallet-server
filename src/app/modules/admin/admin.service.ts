@@ -107,9 +107,9 @@ const walletAction = async (action : string , userId: string) => {
         throw new AppError(httpStatus.NOT_FOUND, "This account doesn't exists")
     }
 
-    if (action.toUpperCase() !== "ACTIVE" || action.toUpperCase() !== "SUSPENDED" || action.toUpperCase() !== "BLOCKED") {
-        throw new AppError(httpStatus.BAD_REQUEST, "Please use a correct wallet action (e.g., ACTIVE, BLOCKED, SUSPENDED)");
-    }
+    // if (action.toUpperCase() !== "ACTIVE" || action.toUpperCase() !== "SUSPENDED" || action.toUpperCase() !== "BLOCKED") {
+    //     throw new AppError(httpStatus.BAD_REQUEST, "Please use a correct wallet action (e.g., ACTIVE, BLOCKED, SUSPENDED)");
+    // }
 
     const session = await mongoose.startSession();
 
