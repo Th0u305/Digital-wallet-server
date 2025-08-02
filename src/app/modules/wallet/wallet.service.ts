@@ -54,7 +54,7 @@ const addMoney = async (payload: Partial<ITransaction>, decodedToken: JwtPayload
                 return { success: false, message: 'Insufficient funds for this operation.' }
             }
             wallet.balance -= amount;
-            
+
             // return { success : false , message : "You cannot perform this action"}
 
         }else if (payload.transactionType === TransactionType.ADD_MONEY) {
@@ -238,7 +238,7 @@ const transactionHistory =  async(decodedToken: JwtPayload)=>{
         throw new AppError(httpStatus.FORBIDDEN, `Your account is ${userWallet.walletStatus?.toLocaleLowerCase()} . Please consult with admin`)
     }
 
-    const history = await Transaction.find({_id : { $in : userWallet.transactionId}})
+    const history = await Transaction.find({_id : { $in : userWallet.transactionId}}).sort({ updatedAt : -1})
     const count = await Transaction.find({_id : { $in : userWallet.transactionId}}).countDocuments()
     
     return {
