@@ -48,9 +48,14 @@ const addMoney = async (payload: Partial<ITransaction>, decodedToken: JwtPayload
             return { success : false, message :  `Your wallet is ${wallet.walletStatus?.toLocaleLowerCase()} . Please consult with admin` }
         }
 
-        if (payload.transactionType !== TransactionType.ADD_MONEY){
-
-            return { success : false , message : "You cannot perform this action"}
+        if (payload.transactionType === TransactionType.WITHDRAW){
+                             
+            if (wallet.balance < amount) {
+                return { success: false, message: 'Insufficient funds for this operation.' }
+            }
+            wallet.balance -= amount;
+            
+            // return { success : false , message : "You cannot perform this action"}
 
         }else if (payload.transactionType === TransactionType.ADD_MONEY) {
             wallet.balance += amount;

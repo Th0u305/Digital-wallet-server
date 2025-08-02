@@ -4,6 +4,7 @@ export enum TransactionType {
   ADD_MONEY = "ADD_MONEY",
   SEND_MONEY = "SEND_MONEY",
   CASH_OUT = "CASH_OUT",
+  WITHDRAW = "WITHDRAW"
   // COMMISSION = "COMMISSION",
   // DEPOSIT = "DEPOSIT",
   // TRANSFER = "TRANSFER",
