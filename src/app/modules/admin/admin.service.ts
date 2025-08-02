@@ -70,7 +70,7 @@ const getAggregatedData = async (req:Request) => {
     const sortCriteria: any = {};
     sortCriteria[sortBy as string] = -1;
     
-    const isLimit = { $limit: Number(limit) }
+    const isLimit = { $limit: Number(limit) || 30 }
 
     if (view === "wallet" || view === "transaction") {
 
