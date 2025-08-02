@@ -21,13 +21,13 @@ const addMoney = catchAsync( async(req:Request, res:Response)=>{
 })
 
 // send money 
-const sendMoney = catchAsync( async (req: Request, res:Response)=>{
+const moneyActions = catchAsync( async (req: Request, res:Response)=>{
 
     const paramsId = req.params.id
     const decodedToken = req.user
     const { amount , transactionType } = req.body
 
-    const result = await WalletService.sendMoney(paramsId, amount, transactionType , decodedToken as JwtPayload)
+    const result = await WalletService.moneyActions(paramsId, amount, transactionType , decodedToken as JwtPayload)
 
     sendResponse(res,{
         success : result.success === false ? false : true,
@@ -54,6 +54,6 @@ const transactionHistory = catchAsync( async( req:Request, res:Response)=>{
 
 export const WalletController = {
     addMoney,
-    sendMoney,
+    moneyActions,
     transactionHistory
 }

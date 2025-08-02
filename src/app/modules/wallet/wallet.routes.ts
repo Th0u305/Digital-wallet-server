@@ -9,4 +9,4 @@ export const WalletRoutes = Router()
 
 WalletRoutes.get("/transactionHistory", checkAuth("USER", "AGENT"), WalletController.transactionHistory)
 WalletRoutes.post("/add-money", checkAuth(...Object.values(Role)), validateRequest(transactionZodValidation), WalletController.addMoney)
-WalletRoutes.post("/moneyActions/:id", checkAuth(...Object.values(Role)), validateRequest(sendMoney), WalletController.sendMoney)
+WalletRoutes.post("/moneyActions/:id", checkAuth(...Object.values(Role)), validateRequest(sendMoney), WalletController.moneyActions)

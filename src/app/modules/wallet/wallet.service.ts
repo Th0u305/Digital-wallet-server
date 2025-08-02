@@ -93,7 +93,7 @@ const addMoney = async (payload: Partial<ITransaction>, decodedToken: JwtPayload
 }
 
 // agent send money to any & user "CASH_OUT" ,"SEND_MONEY"
-const sendMoney = async (paramsId : string , amount : number , transType : string , decodedToken : JwtPayload) =>{
+const moneyActions = async (paramsId : string , amount : number , transType : string , decodedToken : JwtPayload) =>{
 
     if (!paramsId) {
         throw new AppError(httpStatus.NOT_FOUND, "Id missing")
@@ -128,8 +128,8 @@ const sendMoney = async (paramsId : string , amount : number , transType : strin
         receiverWallet = await Wallet.findById(receiverUser?.walletId)
     }
 
-    if (receiverUser?.role === Role.AGENT && senderUser?.role === Role.USER && transType.toUpperCase() === TransactionType.ADD_MONEY) {
-        throw new AppError(httpStatus.BAD_REQUEST, "User cannot send money to user you can cash-out")
+    if (receiverUser?.role === Role.AGENT && senderUser?.role === Role.USER) {
+        throw new AppError(httpStatus.BAD_REQUEST, `User cannot ${transType.toLowerCase()} to agent`)
     }
     
     if (!senderUser) {
@@ -247,6 +247,6 @@ const transactionHistory =  async(decodedToken: JwtPayload)=>{
 
 export const WalletService = {
     addMoney,
-    sendMoney,
+    moneyActions,
     transactionHistory
 }
