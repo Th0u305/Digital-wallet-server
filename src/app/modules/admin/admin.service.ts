@@ -1,4 +1,4 @@
-import mongoose, { Model } from "mongoose";
+import mongoose, { Model, PipelineStage } from "mongoose";
 import { Agent } from "../agent/agent.model"
 import { User } from "../user/user.model"
 import { Request } from "express";
@@ -6,127 +6,113 @@ import AppError from "../../errorHelper/AppError";
 import httpStatus from "http-status-codes"
 import { Wallet } from "../wallet/wallet.model";
 import { Transaction } from "../transactions/transactions.model";
-// import { WalletStatus } from "../wallet/wallet.interface";
+import z from "zod";
+import { WalletStatus } from "../wallet/wallet.interface";
+
+const querySchema = z.object({
+    view: z.enum(['user', 'agent', 'wallet', 'transaction']),
+    filterBy: z.enum(['wallet', 'transaction', 'all']).optional(),
+    sortBy: z.string().optional().default('createdAt'),
+    sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+    limit: z.preprocess(val => parseInt(String(val), 10) || 10, z.number().min(1)),
+    page: z.preprocess(val => parseInt(String(val), 10) || 1, z.number().min(1)),
+});
 
 
-const getAggregatedData = async (req:Request) => {
 
-    const { view, filterBy, sortBy, limit } = req.query;
+export const getAggregatedData = async (req: Request) => {
 
-    if (view === filterBy) {
-        throw new AppError(httpStatus.CONFLICT, "View and filter value by cannot be the same")
-    }
-    if (view === "wallet" || view === "transaction" && filterBy === "all") {
-        throw new AppError(httpStatus.CONFLICT, "Please change the view to user or agent to get all data with wallet and transaction")
-    }
+    const validatedQuery = querySchema.parse(req.query);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let Model: Model<any>;
+    const { view, filterBy, sortBy, sortOrder, limit, page } = validatedQuery;
 
-    let result
-    let count 
-
-    switch (view) {
-        case 'user':
-            Model = User;
-            break;
-        case 'agent':
-            Model = Agent
-            break;
-        case "transaction": 
-            Model = Transaction
-            break
-        case "wallet":
-            Model = Wallet
-            break
-        default:
-            throw new AppError(httpStatus.BAD_REQUEST, 'Invalid view specified.');
-    }
-
-    const isWallet = {
+    const skip = (page - 1) * limit;
     
-        $lookup: {
-            from: "wallets",
-            localField: "walletId", // The ID on the Agent document
-            foreignField: "_id",     // The ID on the Wallet document
-            as: "walletData"
-        }
-    }
 
-    const isTransaction = {
-
-        $lookup: {
-            from: "transactions",
-            localField: "walletData.transactionId", // The array of IDs from the wallet
-            foreignField: "_id",   // The ID on each transaction document
-            as: "allTransactions"  // This creates the new array with the full transaction documents
-        }
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sortCriteria: any = {};
-    sortCriteria[sortBy as string] = -1;
-    
-    const isLimit = { $limit: Number(limit) || 30 }
+    // eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style, @typescript-eslint/no-explicit-any
+    const modelMap: { [key: string]: Model<any> } = {
+        user: User,
+        agent: Agent,
+        wallet: Wallet,
+        transaction: Transaction,
+    };
+    const Model = modelMap[view as string];
 
 
-    if (!filterBy) {
+    const pipeline: PipelineStage[] = [];
 
-        result = await Model.find()
-    }
-    if (filterBy === "all") {
-               result = await Model.aggregate([
-            isWallet,
-            isTransaction,
-            isLimit,
-        ]).sort(sortCriteria)
-    }
-    else if (view === "agent" || view === "user"){
 
-        result = await Model.aggregate([
-            isWallet,
-            isTransaction,
+    if (view === 'user' || view === 'agent') {
+        pipeline.push(
             {
-                $project : {
-                    [filterBy === "wallet" ? "allTransactions" : "walletData" ] : 0
-                }
-            },
-            isLimit,
-        ]).sort(sortCriteria)
-
-    }
-    else if (view === "wallet" && filterBy === "transaction" || view === "transaction" && filterBy === "wallet" ) {
-        
-        result = await Model.aggregate(
-            [
-                {
-                    $lookup: {
-                        from: "transactions",
-                        localField: "transactionId", // The ID on the transaction document
-                        foreignField: "_id",     // The ID on the transaction document
-                        as: "allTransactions"
-                    }
+                $lookup: {
+                    from: 'wallets',
+                    localField: 'walletId',
+                    foreignField: '_id',
+                    as: 'walletData',
                 },
-            ]
-        )
+            },
+            { $unwind: { path: '$walletData', preserveNullAndEmptyArrays: true } }
+        );
+
+        pipeline.push({
+            $lookup: {
+                from: 'transactions',
+                localField: 'walletData.transactionId',
+                foreignField: '_id',
+                as: 'allTransactions',
+            },
+        });
+    } else if (view === 'wallet') {
+         pipeline.push({
+            $lookup: {
+                from: 'transactions',
+                localField: 'transactionId',
+                foreignField: '_id',
+                as: 'allTransactions',
+            },
+        });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const projectStage: Record<string, any> = {};
+    if (filterBy === 'wallet') {
+        projectStage.allTransactions = 0; // Hide transactions
+    } else if (filterBy === 'transaction') {
+        projectStage.walletData = 0; // Hide wallet data
+    }
     
-
-    const data = {
-        count : {
-            total : count
-        },
-        queries : {
-            view : view,
-            filterBy : filterBy,
-            sortBy : sortBy,
-            limit : limit
-        },
-        data : result,
+    // Only add the project stage if there's something to project
+    if (Object.keys(projectStage).length > 0) {
+        pipeline.push({ $project: projectStage });
     }
 
-    return data
+    pipeline.push({
+        $facet: {
+            // First pipeline: get metadata (total count)
+            metadata: [{ $count: 'total' }],
+            // Second pipeline: get the actual paginated data
+            data: [
+                { $sort: { [sortBy as string]: sortOrder === 'asc' ? 1 : -1 } },
+                { $skip: skip },
+                { $limit: limit || 10 },
+            ],
+        },
+    });
+
+    const result = await Model.aggregate(pipeline);
+
+    const data = result[0].data;
+    const total = result[0].metadata[0]?.total || 0;
+
+    return {
+        meta: {
+            page,
+            limit,
+            total,
+        },
+        data,
+    };
 };
 
 const walletAction = async (action : string , userId: string) => {
@@ -141,18 +127,9 @@ const walletAction = async (action : string , userId: string) => {
         throw new AppError(httpStatus.NOT_FOUND, "This account doesn't exists")
     }
 
-    // if (action.toUpperCase() !== WalletStatus.ACTIVE) {
-    //     throw new AppError(httpStatus.BAD_REQUEST, "Please use a correct wallet action (e.g., ACTIVE, BLOCKED, SUSPENDED)");
-    // }
-    // else if (action.toUpperCase() !== WalletStatus.SUSPENDED) {
-    //             throw new AppError(httpStatus.BAD_REQUEST, "Please use a correct wallet action (e.g., ACTIVE, BLOCKED, SUSPENDED)");
-
-    // }
-    // else if ( action.toUpperCase() !== WalletStatus.BLOCKED) {
-    //             throw new AppError(httpStatus.BAD_REQUEST, "Please use a correct wallet action (e.g., ACTIVE, BLOCKED, SUSPENDED)");
-
-    // }
-
+    if (action.toUpperCase() !== WalletStatus.ACTIVE && action.toUpperCase() !== WalletStatus.SUSPENDED && action.toUpperCase() !== WalletStatus.BLOCKED) {
+        throw new AppError(httpStatus.BAD_REQUEST, "Please use a correct wallet action (e.g., ACTIVE, BLOCKED, SUSPENDED)");
+    }
 
     const session = await mongoose.startSession();
 
