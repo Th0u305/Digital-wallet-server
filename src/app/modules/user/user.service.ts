@@ -111,12 +111,12 @@ const updateUser = async (userId: string, payload: Partial<IAgent>, decodedToken
     if (decodedToken._id !== userId || isUserExists?._id.toString() !== userId) {
         res.clearCookie("accessToken", {
           httpOnly : true,
-          secure : false,
+          secure : true,
           sameSite : "lax"
         })
         res.clearCookie("refreshToken", {
           httpOnly : true,
-          secure : false,
+          secure : true,
           sameSite : "lax"
         })
         throw new AppError(httpStatus.FORBIDDEN , "Token error")

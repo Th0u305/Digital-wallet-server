@@ -3,6 +3,7 @@ import dotenv from "dotenv"
 dotenv.config()
 
 interface EnvConfig {
+    SESSION_SECRET : string,
     PORT : string,
     DB_URL : string,
     NODE_ENV : "development" | "production"
@@ -22,7 +23,7 @@ interface EnvConfig {
 
 
 const loadEnvVariables = (): EnvConfig =>{
-    const requiredEnvVariables : string[] = ["PORT", "DB_URL", "NODE_ENV", "JWT_ACCESS_SECRET", "JWT_ACCESS_EXPIRES", "BCRYPT_SALT_ROUND", 
+    const requiredEnvVariables : string[] = ["SESSION_SECRET", "PORT", "DB_URL", "NODE_ENV", "JWT_ACCESS_SECRET", "JWT_ACCESS_EXPIRES", "BCRYPT_SALT_ROUND", 
                                             "SUPER_ADMIN_PASSWORD" , "SUPER_ADMIN_EMAIL","JWT_REFRESH_SECRET", "JWT_REFRESH_EXPIRES", 
                                             "GOOGLE_CLIENT_SECRET", "GOOGLE_CLIENT_ID", "GOOGLE_CALLBACK_URL", "EXPRESS_SESSION_SECRET", 
                                             "FRONTEND_URL",]
@@ -34,6 +35,7 @@ const loadEnvVariables = (): EnvConfig =>{
     })
 
     return {
+        SESSION_SECRET : process.env.SESSION_SECRET as string,
         PORT : process.env.PORT as string,
         DB_URL : process.env.DB_URL as string,
         NODE_ENV : process.env.NODE_ENV as "development" | "production",

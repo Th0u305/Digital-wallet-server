@@ -12,7 +12,7 @@ const checkAuth = (...authRoles: string[]) => async (req: Request, res: Response
 
   try {
 
-    const authorizationToken = req.headers.authorization
+    const authorizationToken = req.headers.authorization || req.cookies.accessToken
     const accessToken = req.cookies.accessToken
     
     

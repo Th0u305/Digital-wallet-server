@@ -6,3 +6,8 @@ import { AgentController } from "./agent.controller";
 export const AgentRoutes = Router()
 
 AgentRoutes.post("/register",validateRequest(createAgentSchema), AgentController.createAgent)
+// AgentRoutes.get("/google", (req:Request, res:Response, next:NextFunction) =>
+//     {
+//         req.session.userRole = "AGENT"; 
+//         googlePassportAuthenticate(req, res, next)
+//     })

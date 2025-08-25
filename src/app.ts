@@ -7,12 +7,13 @@ import passport from "passport";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import notFound from "./app/middleware/notFound";
 import "./app/config/passport";
+import { envVars } from "./app/config/env";
 
 const app: Application = express();
 
 app.use(
   expressSession({
-    secret: "Secret",
+    secret: envVars.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
   })
