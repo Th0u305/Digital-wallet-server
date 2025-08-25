@@ -5,8 +5,8 @@ import catchAsync from "../../utils/catchAsync";
 
 
 const sendOTP = catchAsync(async (req: Request, res: Response) => {
-    const { email, name } = req.body
-    await OTPService.sendOTP(email, name)
+    const { email, name, role } = req.body
+    await OTPService.sendOTP(email, name, role)
     sendResponse(res, {
         statusCode: 200,
         success: true,

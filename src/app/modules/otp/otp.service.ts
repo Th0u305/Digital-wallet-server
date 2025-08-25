@@ -3,6 +3,11 @@ import { sendEmail } from "../../utils/sendEmail";
 import { User } from "../user/user.model";
 import AppError from "../../errorHelper/AppError";
 import { redisClient } from "../../config/redis.config";
+import { Model } from "mongoose";
+import httpStatus from "http-status-codes"
+import { Agent } from "../agent/agent.model";
+
+
 const OTP_EXPIRATION = 2 * 60 // 2minute
 
 const generateOtp = (length = 6) => {
@@ -14,9 +19,26 @@ const generateOtp = (length = 6) => {
     return otp
 }
 
-const sendOTP = async (email: string, name: string) => {
+const sendOTP = async (email: string, name: string , role: string) => {
 
-    const user = await User.findOne({ email })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let Model: Model<any>;
+
+        switch (role) {
+        case 'USER':
+            Model = User;
+            break;
+        case 'AGENT':
+            Model = Agent
+            break;
+        case 'ADMIN':
+            Model = User
+            break;
+        default:
+            throw new AppError(httpStatus.BAD_REQUEST, 'Invalid role specified.');
+    }
+
+    const user = await Model.findOne({ email })
 
     if (!user) {
         throw new AppError(404, "User not found")

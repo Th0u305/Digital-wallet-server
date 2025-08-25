@@ -4,6 +4,7 @@ import { AuthRoutes } from "../modules/auth/auth.routes";
 import { AgentRoutes } from "../modules/agent/agent.routes";
 import { WalletRoutes } from "../modules/wallet/wallet.routes";
 import { AdminRoutes } from "../modules/admin/admin.routes";
+import { OtpRoutes } from "../modules/otp/otp.routes";
 
 export const customRouter = Router();
 const moduleRoutes = [
@@ -26,6 +27,10 @@ const moduleRoutes = [
   {
     path: "/admin",
     route : AdminRoutes
+  },
+  {
+    path : "/otp",
+    route : OtpRoutes
   }
 ];
 
