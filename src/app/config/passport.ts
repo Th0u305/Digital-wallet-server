@@ -58,7 +58,7 @@ passport.use(
             }
             
             if (!entity) {
-                return done(null, false, { message: "Agent not found with this email." });
+                return done(null, false, { message: "No account found with this email" });
             }
 
             const validationResult =  validateCredentials(entity, password);

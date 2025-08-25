@@ -22,7 +22,13 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(cookieParser());
 app.use(express.json());
-app.use(cors());
+app.use(cors(
+  {
+    origin : ["http://localhost:3000", envVars.FRONTEND_URL],
+    credentials : true,
+    optionsSuccessStatus : 200,
+  }
+));
 
 app.use("/api/v1", customRouter);
 app.get("/", (req: Request, res: Response) => {

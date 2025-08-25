@@ -37,7 +37,7 @@ const agentSchema = new Schema<IAgent>({
         enum : Object.values(IsActive),
         default : IsActive.ACTIVE
     },
-    isVerified : { type : Boolean, default : true},
+    isVerified : { type : Boolean, default : false},
     walletId : { type : Schema.Types.ObjectId , ref : "wallet"},
     nidNumber : { type : String , unique : true, required: true},
     commissionRate : { type : Number, default : 0.5},
